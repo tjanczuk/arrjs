@@ -1,0 +1,9 @@
+{
+	"port": 80,
+	"backends": [
+		{
+			"host": "localhost",
+			"port": 31415
+		}
+	]
+}
