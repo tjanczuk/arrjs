@@ -1,0 +1,15 @@
+{
+  "name": "arrjs",
+  "description": "application request routing for node.js",
+  "version": "0.1.0",
+  "author": "Tomasz Janczuk <tomasz@janczuk.org>",
+  "dependencies": {
+    "http-proxy": "0.8.0",
+    "optimist": "0.3.1"
+  },
+  "devDependencies": {
+  },
+  "keywords": ["routing", "http", "application", "web"],
+  "repository": "git://github.com/tjanczuk/arrjs",
+  "engines": { "node": ">= 0.4.1 < 0.7.0" }
+}
