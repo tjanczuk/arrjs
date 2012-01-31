@@ -68,6 +68,7 @@ function getNextPort() {
 	do {
 		if (!processes[currentPort]) {
 			result = currentPort;
+			currentPort++;
 			break;
 		}
 
@@ -128,6 +129,8 @@ function createProcess(res, app) {
 		}
 		else {
 			processes[port] = process;
+			process.stdout.on('data', function(data) { console.log('PID ' + process.pid + ':\n' + data); });
+			process.stderr.on('data', function(data) { console.log('PID ' + process.pid + ':\n' + data); });
 			process.on('exit', function (code, signal) {
 				delete processes[port];
 				console.log('Child process exited. Port: ' + port + ', PID: ' + process.pid + ', code: ' + code + ', signal: ' + signal)	
