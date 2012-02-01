@@ -58,7 +58,7 @@ function readConfiguration() {
 	}
 
 	if (!localIP) 
-		throw "Unable to determine the IP address of a network interface.";		
+		throw "Unable to determine the IPv4 address of a local network interface.";		
 }
 
 function onProxyError(context, status, error) {
@@ -69,7 +69,10 @@ function onProxyError(context, status, error) {
 
 function routeToMachine(context) {
 	// TODO: kick off the backend from the pool if down
-	console.log('Routing to ' + context.backend.host + ':' + context.backend.port);
+	if (context.backend.host === localIP)
+		console.log('Routing to localhost:' + context.backend.port);
+	else
+		console.log('Routing to ' + context.backend.host + ':' + context.backend.port);
 	context.req.resume();
 	context.proxy.proxyRequest(context.req, context.res, context.backend);
 }
