@@ -18,7 +18,7 @@ function readConfiguration() {
 		.options('m', {
 			alias: 'mongo',
 			description: 'Mongo DB connecton string',
-			default: ''
+			default: 'mongodb://localhost/arr'
 		})
 		.options('r', {
 			alias: 'range',
@@ -28,7 +28,7 @@ function readConfiguration() {
 		.options('p', {
 			alias: 'port',
 			description: 'ARRDWAS listen port',
-			default: 80
+			default: 31415
 		})
 		.check(function (args) { return !args.help; })
 		.check(function (args) { 
@@ -207,7 +207,7 @@ function onRouteRequest(req, res, proxy) {
 
 function setupRouter() {
 	httpProxy.createServer(onRouteRequest).listen(argv.p);
-	console.log('ARRDWAS started and listening on port ' + argv.p);
+	console.log('ARRDWAS started');
 	console.log('Ctrl-C to terminate');
 }
 
@@ -232,8 +232,7 @@ function connectDatabase() {
 readConfiguration();
 
 console.log('Managed TCP port range: ' + startPort + '-' + endPort);
-console.log('Local IP address: ' + localIP)
-console.log('ARRDWAS listen port:  ' + argv.p);
-console.log('Mongo DB connection string: ' + argv.m);
+console.log('Mongo DB: ' + argv.m);
+console.log('Listen address: ' + localIP + ':' + argv.p);
 
 connectDatabase();
