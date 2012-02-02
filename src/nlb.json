@@ -1,13 +1,20 @@
-{
-	"port": 80,
-	"backends": [
-		{
-			"host": "localhost",
-			"port": 31415
-		},
-		{
-			"host": "10.80.120.225",
-			"port": 31415
-		}
-	]
-}
+[
+	{
+		"port": 80,
+		"backends": [
+			{
+				"host": "localhost",
+				"port": 31415
+			}
+		]
+	},
+	{
+		"port": 443,
+		"backends": [
+			{
+				"host": "localhost",
+				"port": 31416
+			}
+		]
+	}
+]
