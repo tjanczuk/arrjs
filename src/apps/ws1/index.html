@@ -1,0 +1,19 @@
+<html>
+<title>websockets in arrdwas</title>
+<head>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+	var body;
+	var socket = io.connect(window.origin);
+	socket.on('dante', function (data) {
+		body = body || document.getElementsByTagName('body')[0];
+		var div = document.createElement('div');
+		div.appendChild(document.createTextNode(data.line));
+		body.appendChild(div);		
+	});
+</script>
+</head>
+<body>
+	<h1>Dante over websockets</h1>
+</body>
+</html>

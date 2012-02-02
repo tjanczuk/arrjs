@@ -62,19 +62,29 @@ function readConfiguration() {
 }
 
 function onProxyError(context, status, error) {
-	context.req.resume();
-	context.res.writeHead(status);
-	context.res.end(typeof error === 'string' ? error : JSON.stringify(error));
+	if (context.socket) {
+		context.socket.end();
+	}
+	else {
+		context.req.resume();
+		context.res.writeHead(status);
+		context.res.end(typeof error === 'string' ? error : JSON.stringify(error));
+	}
 }
 
 function routeToMachine(context) {
 	// TODO: kick off the backend from the pool if down
-	if (context.backend.host === localIP)
-		console.log('Routing to localhost:' + context.backend.port);
-	else
-		console.log('Routing to ' + context.backend.host + ':' + context.backend.port);
-	context.req.resume();
-	context.proxy.proxyRequest(context.req, context.res, context.backend);
+	var machineName = context.backend.host === localIP ? 'localhost' : context.backend.host;
+	var requestType = context.socket ? 'upgrade' : 'regular';
+	console.log('Routing ' + requestType + ' request to ' + machineName + ':' + context.backend.port);
+	if (context.socket) {
+		context.socket.resume();
+		context.proxy.proxyWebSocketRequest(context.req, context.socket, context.head, context.backend);	
+	}
+	else {
+		context.req.resume();
+		context.proxy.proxyRequest(context.req, context.res, context.backend);
+	}
 }
 
 function updateAppWithNewInstance(context) {
@@ -208,8 +218,15 @@ function onRouteRequest(req, res, proxy) {
 	loadApp({ req: req, res: res, proxy: proxy});
 }
 
+function onRouteUpgradeRequest(req, socket, head, proxy) {
+	socket.pause();
+	loadApp({ req: req, socket: socket, head: head, proxy: proxy});
+}
+
 function setupRouter() {
-	httpProxy.createServer(onRouteRequest).listen(argv.p);
+	var server = httpProxy.createServer(onRouteRequest);
+	server.on('upgrade', function (req, res, head) { onRouteUpgradeRequest(req, res, head, server.proxy); });
+	server.listen(argv.p);
 	console.log('ARRDWAS started');
 	console.log('Ctrl-C to terminate');
 }
