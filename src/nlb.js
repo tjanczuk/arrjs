@@ -5,7 +5,7 @@ console.log('NLB: TCP level round robin load balancer')
 console.log('Ctrl-C to terminate');
 
 function routeToBackend(connection, route) {
-	var backend = route.backends[currentBackend];
+	var backend = route.backends[route.currentBackend];
 	route.currentBackend++;
 	route.currentBackend %= route.backends.length;
 	var client = net.connect(backend.port, backend.host, function () {

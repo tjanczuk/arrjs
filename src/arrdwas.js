@@ -1,6 +1,7 @@
 var httpProxy = require('http-proxy'),
 	url = require('url'),
 	http = require('http'),
+	https = require('https'),
 	spawn = require('child_process').spawn,
 	net = require('net'),
 	mongo = require('mongodb'),
@@ -30,20 +31,26 @@ function readConfiguration() {
 		})
 		.options('p', {
 			alias: 'port',
-			description: 'ARRDWAS listen port',
+			description: 'Unsecured listen port',
 			default: 31415
+		})
+		.options('s', {
+			alias: 'sslport',
+			description: 'SSL listen port',
+			default: 31416
 		})
 		.options('c', {
 			alias: 'cert',
-			description: 'ARRDWAS non-SNI (wildcard) certificate',
+			description: 'Non-SNI (wildcard) server certificate for SSL',
 			default: 'certs/wildcard-janczuk-cert.pem'
 		})
 		.options('k', {
 			alias: 'key',
-			description: 'ARRDWAS private key',
+			description: 'Private key for SSL',
 			default: 'certs/wildcard-janczuk-key.pem'
 		})
 		.check(function (args) { return !args.help; })
+		.check(function (args) { return args.p != args.s; })
 		.check(function (args) { 
 			var index = args.r.indexOf('-');
 			if (index < 1 || index >= (args.r.length - 1))
@@ -245,6 +252,12 @@ function setupRouter() {
 	var server = httpProxy.createServer(onRouteRequest);
 	server.on('upgrade', function (req, res, head) { onRouteUpgradeRequest(req, res, head, server.proxy); });
 	server.listen(argv.p);
+
+	var options = { https: { cert: cert, key: key } };
+	var secureServer = httpProxy.createServer(options, onRouteRequest);
+	secureServer.on('upgrade', function (req, res, head) { onRouteUpgradeRequest(req, res, head, secureServer.proxy); });
+	secureServer.listen(argv.s);
+
 	console.log('ARRDWAS started');
 	console.log('Ctrl-C to terminate');
 }
@@ -271,7 +284,8 @@ readConfiguration();
 
 console.log('Managed TCP port range: ' + startPort + '-' + endPort);
 console.log('Mongo DB: ' + argv.m);
-console.log('Listen address: ' + localIP + ':' + argv.p);
+console.log('Unsecured listen address: ' + localIP + ':' + argv.p);
+console.log('SSL listen address: ' + localIP + ':' + argv.s);
 console.log('Certificate: ' + argv.c);
 console.log('Private key: '+ argv.k);
 
