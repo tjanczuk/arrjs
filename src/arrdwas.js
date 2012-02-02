@@ -3,7 +3,8 @@ var httpProxy = require('http-proxy'),
 	http = require('http'),
 	spawn = require('child_process').spawn,
 	net = require('net'),
-	mongo = require('mongodb');
+	mongo = require('mongodb'),
+	fs = require('fs');
 
 var startPort, endPort, currentPort;
 var processes = {};
@@ -11,6 +12,8 @@ var localIP;
 var db;
 var appsCollection;
 var argv;
+var key;
+var cert;
 
 function readConfiguration() {
 	argv = require('optimist')
@@ -30,6 +33,16 @@ function readConfiguration() {
 			description: 'ARRDWAS listen port',
 			default: 31415
 		})
+		.options('c', {
+			alias: 'cert',
+			description: 'ARRDWAS non-SNI (wildcard) certificate',
+			default: 'certs/wildcard-janczuk-cert.pem'
+		})
+		.options('k', {
+			alias: 'key',
+			description: 'ARRDWAS private key',
+			default: 'certs/wildcard-janczuk-key.pem'
+		})
 		.check(function (args) { return !args.help; })
 		.check(function (args) { 
 			var index = args.r.indexOf('-');
@@ -40,6 +53,11 @@ function readConfiguration() {
 			endPort = parseInt(args.r.substring(index + 1));
 			if (!startPort || !endPort)
 				return false; 
+		})
+		.check(function (args) {
+			cert = fs.readFileSync(args.c);
+			key = fs.readFileSync(args.k);
+			return true;
 		})
 		.argv;
 
@@ -200,7 +218,7 @@ function routeToApp(context) {
 
 function loadApp(context) {
 	var host = context.req.headers['host'].toLowerCase();
-	appsCollection.findOne({ hosts: host }, function (err, result) {
+	appsCollection.findOne({ 'hosts.host' : host }, function (err, result) {
 		if (err || !result) {
 			onProxyError(context, 404, err || 'Web application not found in registry');
 		}
@@ -254,5 +272,7 @@ readConfiguration();
 console.log('Managed TCP port range: ' + startPort + '-' + endPort);
 console.log('Mongo DB: ' + argv.m);
 console.log('Listen address: ' + localIP + ':' + argv.p);
+console.log('Certificate: ' + argv.c);
+console.log('Private key: '+ argv.k);
 
 connectDatabase();
