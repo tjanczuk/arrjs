@@ -1,4 +1,4 @@
 node_modules
 secret
 .DS_Store
-*.bak
+nlb.json
