@@ -1,5 +1,4 @@
 var httpProxy = require('http-proxy'),
-	url = require('url'),
 	http = require('http'),
 	https = require('https'),
 	spawn = require('child_process').spawn,
@@ -9,12 +8,7 @@ var httpProxy = require('http-proxy'),
 
 var startPort, endPort, currentPort;
 var processes = {};
-var localIP;
-var db;
-var appsCollection;
-var argv;
-var key;
-var cert;
+var localIP, db, appsCollection, argv, key, cert, sniApps;
 
 function readConfiguration() {
 	argv = require('optimist')
@@ -98,9 +92,9 @@ function onProxyError(context, status, error) {
 }
 
 function routeToMachine(context) {
-	// TODO: kick off the backend from the pool if down
+	// TODO: remove the backend from the pool if down
 	var machineName = context.backend.host === localIP ? 'localhost' : context.backend.host;
-	var requestType = context.socket ? 'upgrade' : 'regular';
+	var requestType = (context.socket ? 'WS' : 'HTTP') + (context.proxy.secure ? 'S' : '');
 	console.log('Routing ' + requestType + ' request to ' + machineName + ':' + context.backend.port);
 	if (context.socket) {
 		context.socket.resume();
@@ -113,14 +107,9 @@ function routeToMachine(context) {
 }
 
 function updateAppWithNewInstance(context) {
-	appsCollection.update(
-		{ _id: context.app._id }, 
-		{ $push: { machines: context.backend }},
+	appsCollection.update({ _id: context.app._id }, { $push: { machines: context.backend }},
 		function (err) {
-			if (err) 
-				onProxyError(context, 500, err);
-			else 
-				routeToMachine(context);
+			err ? onProxyError(context, 500, err) : routeToMachine(context);
 		});
 }
 
@@ -130,14 +119,12 @@ function getNextPort() {
 	var result;
 	do {
 		if (!processes[currentPort]) {
-			result = currentPort;
-			currentPort++;
+			result = currentPort++;
 			break;
 		}
 
 		currentPort++;
-		if (currentPort > endPort)
-			currentPort = startPort;
+		currentPort %= (endPort + 1);
 	} while (currentPort != sentinel);
 
 	return result;
@@ -145,10 +132,8 @@ function getNextPort() {
 
 function getEnv(port) {
 	var env = {};
-	for (var i in process.env) {
+	for (var i in process.env)
 		env[i] = process.env[i];
-	}
-
 	env['PORT'] = port;
 
 	return env;
@@ -213,9 +198,8 @@ function routeToApp(context) {
 		}
 	}
 
-	if (!context.backend && context.app.instances === context.app.machines.length) {
+	if (!context.backend && context.app.instances === context.app.machines.length) 
 		context.backend = context.app.machines[Math.floor(context.app.instances * Math.random())];
-	}
 
 	if (context.backend)
 		routeToMachine(context);
@@ -223,9 +207,24 @@ function routeToApp(context) {
 		createProcess(context);
 }
 
+function ensureSecurityConstraints(context) {
+	var host;
+	for (var i in context.app.hosts) {
+		if (context.app.hosts[i].host === context.host) {
+			host = context.app.hosts[i];
+			break;
+		}
+	}
+
+	if (!host || (host.ssl === 'none' && context.proxy.secure) || (host.ssl === 'require' && !context.proxy.secure)) 
+		onProxyError(context, 404, "Request security does not match security configuration of the application");
+	else 
+		routeToApp(context);
+}
+
 function loadApp(context) {
-	var host = context.req.headers['host'].toLowerCase();
-	appsCollection.findOne({ 'hosts.host' : host }, function (err, result) {
+	context.host = context.req.headers['host'].toLowerCase();
+	appsCollection.findOne({ 'hosts.host' : context.host }, function (err, result) {
 		if (err || !result) {
 			onProxyError(context, 404, err || 'Web application not found in registry');
 		}
@@ -233,7 +232,7 @@ function loadApp(context) {
 			context.app = result;
 			if (!context.app.machines)
 				context.app.machines = [];
-			routeToApp(context);
+			ensureSecurityConstraints(context);
 		}
 	})
 }
@@ -249,17 +248,44 @@ function onRouteUpgradeRequest(req, socket, head, proxy) {
 }
 
 function setupRouter() {
+
+	// setup HTTP/WS proxy
+
 	var server = httpProxy.createServer(onRouteRequest);
 	server.on('upgrade', function (req, res, head) { onRouteUpgradeRequest(req, res, head, server.proxy); });
 	server.listen(argv.p);
 
+	// setup HTTPS/WSS proxy along with SNI information for individual apps
+
 	var options = { https: { cert: cert, key: key } };
 	var secureServer = httpProxy.createServer(options, onRouteRequest);
+	secureServer.proxy.secure = true;
 	secureServer.on('upgrade', function (req, res, head) { onRouteUpgradeRequest(req, res, head, secureServer.proxy); });
+	// TODO design way to update SNI information when metadata changes (use SNI callback?)
+	sniApps.forEach(function (app) {
+		app.hosts.forEach(function (host) {
+			if (host.host && host.ssl && host.ssl !== 'none' && host.key && host.cert) {
+				console.log('Configuring SNI for hostname ' + host.host);
+				secureServer.addContext(host.host, {
+					cert: fs.readFileSync(host.cert),
+					key: fs.readFileSync(host.key)
+				});
+			}
+		});
+	});
 	secureServer.listen(argv.s);
 
 	console.log('ARRDWAS started');
 	console.log('Ctrl-C to terminate');
+}
+
+function loadSNIConfiguration() {
+	appsCollection.find({ $or: [{ 'hosts.ssl': 'require' }, { 'hosts.ssl': 'allow' }]}).toArray(function (err, result) {
+		if (err) throw err;
+		console.log('Loaded SNI configuration');
+		sniApps = result;
+		setupRouter();
+	});
 }
 
 function loadAppsCollection() {
@@ -267,7 +293,7 @@ function loadAppsCollection() {
 		if (err) throw err;
 		console.log('Loaded apps collection');
 		appsCollection = result;
-		setupRouter();
+		loadSNIConfiguration();
 	})	
 }
 
