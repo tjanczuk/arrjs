@@ -13,5 +13,5 @@
   },
   "keywords": ["routing", "http", "application", "web"],
   "repository": "git://github.com/tjanczuk/arrjs",
-  "engines": { "node": ">= 0.4.1 < 0.7.0" }
+  "engines": { "node": ">= 0.7.0" }
 }
