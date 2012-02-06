@@ -87,15 +87,21 @@ function onProxyError(context, status, error) {
 	else {
 		context.req.resume();
 		context.res.writeHead(status);
-		context.res.end(typeof error === 'string' ? error : JSON.stringify(error));
+		if ('HEAD' !== context.req.method)
+			context.res.end(typeof error === 'string' ? error : JSON.stringify(error));
+		else
+			context.res.end();
 	}
 }
 
-function routeToMachine(context) {
-	// TODO: remove the backend from the pool if down
+function getDestinationDescription(context) {
 	var machineName = context.backend.host === localIP ? 'localhost' : context.backend.host;
 	var requestType = (context.socket ? 'WS' : 'HTTP') + (context.proxy.secure ? 'S' : '');
-	console.log('Routing ' + requestType + ' request to ' + machineName + ':' + context.backend.port);
+	return requestType + ' request to ' + machineName + ':' + context.backend.port;	
+}
+
+function routeToMachine(context) {
+	console.log('Routing ' + getDestinationDescription(context));
 	if (context.socket) {
 		context.socket.resume();
 		context.proxy.proxyWebSocketRequest(context.req, context.socket, context.head, context.backend);	
@@ -148,9 +154,13 @@ function waitForServer(context, port, attemptsLeft, delay) {
 
 	client.on('error', function() {
 		client.destroy();
-		if (attemptsLeft === 0)
+		if (attemptsLeft === 0) {
 			onProxyError(context, 500, 'The application process did not establish a listener in a timely manner.');
-		else 
+			console.log('Terminating unresponsive application process ' + context.process.pid);
+			delete processes[context.process.port];
+			try { process.kill(context.process.pid); }
+			catch (e) {}
+		} else 
 			setTimeout(function () {
 				waitForServer(context, port, attemptsLeft - 1, delay * 1.5);				
 			}, delay);
@@ -160,25 +170,36 @@ function waitForServer(context, port, attemptsLeft, delay) {
 function createProcess(context) {
 	var port = getNextPort();
 	if (!port) {
-		onProxyError(context, 500, 'No ports remain available to initiate application ' + context.app.command);
+		onProxyError(context, 500, 'No ports remain available to initiate application ' + JSON.stringify(context.app.process));
 	}
 	else {
 		var env = getEnv(port);
 		console.log('Creating new process: ' + JSON.stringify(context.app.process));
-		var process = spawn(context.app.process.executable, context.app.process.args || [], { env: env });
-		if (!process || (typeof process.exitCode === 'number' && process.exitCode !== 0)) {
-			console.log(process.exitCode);
-			console.log('Unable to start process: ' + context.app.command);
-			onProxyError(context, 500, 'Unable to start process \'' + context.app.command + '\'');
+		try { context.process = spawn(context.app.process.executable, context.app.process.args || [], { env: env }); }
+		catch (e) {};
+		if (!context.process || (typeof context.process.exitCode === 'number' && context.process.exitCode !== 0)) {
+			console.log('Unable to start process: ' + JSON.stringify(context.app.process));
+			onProxyError(context, 500, 'Unable to start process: ' + JSON.stringify(context.app.process));
 		}
 		else {
-			processes[port] = process;
-			process.stdout.on('data', function(data) { console.log('PID ' + process.pid + ':' + data); });
-			process.stderr.on('data', function(data) { console.log('PID ' + process.pid + ':' + data); });
-			process.on('exit', function (code, signal) {
+			processes[port] = context.process;
+			context.process.port = port;
+			var logger = function(data) { console.log('PID ' + context.process.pid + ':' + data); };
+			context.process.stdout.on('data', logger);
+			context.process.stderr.on('data', logger);
+			context.process.on('exit', function (code, signal) {
 				delete processes[port];
-				console.log('Child process exited. Port: ' + port + ', PID: ' + process.pid + ', code: ' + code + ', signal: ' + signal);
-				// TODO unregister the machine from the app
+				console.log('Child process exited. Port: ' + port + ', PID: ' + context.process.pid + ', code: ' + code + ', signal: ' + signal);
+
+				// remove registration of the instance of the application that just exited
+
+				appsCollection.update({ _id: context.app._id }, { $pull: { machines: { host: localIP, port: port }}}, 
+					function (err) {
+						if (err)
+							console.log('Error removing registration of application ' + context.host + ' on ' + localIP + ':' + port + ': ' + err);
+						else
+							console.log('Removed registration of application ' + context.host + ' on ' + localIP + ':' + port);
+					});
 			});
 			waitForServer(context, port, 3, 1000);
 		}
@@ -224,6 +245,7 @@ function ensureSecurityConstraints(context) {
 
 function loadApp(context) {
 	context.host = context.req.headers['host'].toLowerCase();
+	context.req.context = context;
 	appsCollection.findOne({ 'hosts.host' : context.host }, function (err, result) {
 		if (err || !result) {
 			onProxyError(context, 404, err || 'Web application not found in registry');
@@ -247,11 +269,23 @@ function onRouteUpgradeRequest(req, socket, head, proxy) {
 	loadApp({ req: req, socket: socket, head: head, proxy: proxy});
 }
 
+function onProxyingError(err, req, res) {
+	console.log('Error routing ' + getDestinationDescription(req.context));
+
+	// remove failing backend from application matadata and return error to client
+
+	appsCollection.update({ _id: req.context.app._id }, { $pull: { machines: { host: req.context.backend.host }}}, 
+		function (err1) {
+			onProxyError(req.context, 500, 'An error occurred when routing: ' + JSON.stringify(err1 || err ||  'unknown'));
+		});
+}
+
 function setupRouter() {
 
 	// setup HTTP/WS proxy
 
 	var server = httpProxy.createServer(onRouteRequest);
+	server.proxy.on('proxyError', onProxyingError);
 	server.on('upgrade', function (req, res, head) { onRouteUpgradeRequest(req, res, head, server.proxy); });
 	server.listen(argv.p);
 
@@ -260,6 +294,7 @@ function setupRouter() {
 	var options = { https: { cert: cert, key: key } };
 	var secureServer = httpProxy.createServer(options, onRouteRequest);
 	secureServer.proxy.secure = true;
+	secureServer.proxy.on('proxyError', onProxyingError);
 	secureServer.on('upgrade', function (req, res, head) { onRouteUpgradeRequest(req, res, head, secureServer.proxy); });
 	// TODO design way to update SNI information when metadata changes (use SNI callback?)
 	sniApps.forEach(function (app) {
