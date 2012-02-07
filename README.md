@@ -115,7 +115,8 @@ a file that can be imported into the MongoDB database using the
 ### Backends
 
 Each server in the farm dedicated to running applications must be running an instance of arrdwas.js. Typically each of 
-the instances of arrdwas.js would be configured identically. Ardwas.js accepts the following parameters:
+the instances of arrdwas.js would be configured identically, which allows any run of the mill TCP level load balancer
+to be put in front of the server farm. Ardwas.js accepts the following parameters:
 
 ```
 Usage: node ./arrdwas.js
@@ -137,3 +138,20 @@ they are activated. The TCP port number assigned to an instance of an applicatio
 the process environment variable named ```PORT```. For example, in case of node.js applications, this value is accessible 
 via the ```process.env.PORT``` property and can be used to set up an HTTP listener. 
 See [server.js](https://github.com/tjanczuk/arrjs/blob/master/src/apps/app1/server.js) for an example. 
+
+The unsecured (-p) and secured (-s) port number are the two TCP port numbers arrdwas.js will listen on. Arrdwas.js will 
+accept HTTP and WS traffic over the unsecured port, and HTTPS and WSS traffic over the secured port. SSL security terminates 
+at arrdwas.js. Arrdwas.js acts as an HTTP[S]/WS[S] reverse proxy, routing incoming requests to appropriate applications, 
+and activating them if necessary. Communication between arrdwas.js and an instance of a application is not secured with SSL
+(i.e. HTTP or WS), so the application code should always set up their listeners for HTTP and WS, regardless whether client
+calls arrive over SSL or not. Appropriate set of proxy ```x-forwarded-*``` headers that arrdwas.js adds to the requests 
+allow applications to learn more about the original client connection. 
+
+Each instance of arrdwas.js is configured with an X.509 certificate (-c) and the associated private key (-k). This
+certificate and private key are used to identify the server during the SSL handshake, unless application specific
+configuration overrdies this setting by providing its own certificate and private key to be used  with 
+[Server Name Identification (SNI)](http://en.wikipedia.org/wiki/Server_Name_Indication). Note that for SNI to take effect
+the client must support it, but most modern browsers do. If you plan to support SSL for multiple applications with 
+different host names and use a single server side certificate to secure them, the domain suffix of all these applications
+must be the same (e.g. foo.barbaz.com and baz.barbaz.com), and the certificate must be a wildcard certificate (e.g. 
+CN=*.barbaz.com). 
