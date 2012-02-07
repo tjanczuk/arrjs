@@ -52,7 +52,7 @@ to resolve domain names used by the sample applications to localhost by adding t
 ```
 
 Start the ARR.JS router to listen for unsecured traffic on port 80 and SSL traffic on port 443 
-(these ports cannot be used by other processes on the box)
+(these ports cannot be used by other processes on the box):
 
 ```
 cd src
@@ -69,7 +69,7 @@ curl https://app2.janczuk.org -k
 ```
 
 In your favorite modern browser navigate to ```http://ws1.janczuk.org```. You should see Dante's Divine Comedy 
-streamed downed to you over a WebSocket connection, a stanza every 2 seconds. When connecting 
+streamed down to the browser over a WebSocket connection, a stanza every 2 seconds. When connecting 
 over ```https://ws1.janczuk.org``` you will first see a security warning because the certificate exposed by 
 the application is not trusted (it is self-signed). 
 
