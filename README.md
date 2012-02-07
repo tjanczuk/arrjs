@@ -155,3 +155,43 @@ the client must support it, but most modern browsers do. If you plan to support 
 different host names and use a single server side certificate to secure them, the domain suffix of all these applications
 must be the same (e.g. foo.barbaz.com and baz.barbaz.com), and the certificate must be a wildcard certificate (e.g. 
 CN=*.barbaz.com). 
+
+### Network Load Balancer
+
+In a typical deployment servers in a farm would run behind a TCP level network load balancer. For the convenience of 
+development, this project includes a very simple, TCP level software load balancer, 
+[nlb.js](https://github.com/tjanczuk/arrjs/blob/master/src/nlb.js). 
+
+Configuration of nlb.js is stored in the adjacent ```nlb.json``` file with the following structure:
+
+```
+[
+  {                             // multiple "routing rules" are allowed; typically one for unsecure traffic and one for SSL
+		"port": 80,                 // the input TCP port number the load balancer will listen on
+		"backends": [               // array of arrdwas.js backend endpoints to load balance incoming TCP connections to
+			{
+				"host": "localhost",    // destination host name
+				"port": 31415           // destination port number (does not need to match the input port number)
+			}
+		]
+	},
+	{
+		"port": 443,
+		"backends": [
+			{
+				"host": "localhost",
+				"port": 31416
+			}
+		]
+	}
+]
+```
+
+The nlb.js is stared as a simple node application:
+
+```
+cd src
+sudo node nlb.js
+```
+
+The nlb.js will perform TCP level, round robin load balancing of incoming TCP connections across the specified backends. 
