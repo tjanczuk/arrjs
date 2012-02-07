@@ -1,6 +1,6 @@
 {
   "name": "arrjs",
-  "description": "application request routing for node.js",
+  "description": "HTTP and WebSocket application request routing and management",
   "version": "0.1.0",
   "author": "Tomasz Janczuk <tomasz@janczuk.org>",
   "dependencies": {
@@ -13,5 +13,5 @@
   },
   "keywords": ["routing", "http", "application", "web"],
   "repository": "git://github.com/tjanczuk/arrjs",
-  "engines": { "node": ">= 0.7.0" }
+  "engines": { "node": ">= 0.7.0-pre" }
 }
