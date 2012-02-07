@@ -79,7 +79,8 @@ the application is not trusted (it is self-signed).
 
 The MongoDB dabatase holds application metadata and must be accessible from all servers in the farm. 
 You can use your own instance or get started with a free instance
-provided by [MongoHQ](https://mongohq.com/home). Bottom line is you need a MongoDB connection URL to provide to 
+provided by [MongoHQ](https://mongohq.com/home). Bottom line is you need a 
+[MongoDB connection URL](http://www.mongodb.org/display/DOCS/Connections) to provide to 
 all instances of arr.js you will run on the backends.
 
 The application metadata must be stored in a single MongoDB collection called ```apps```. Each document in this collection 
