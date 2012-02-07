@@ -24,7 +24,7 @@ accessible from all backends.
 
 ## Getting started
 
-Instructions below are for setting up a single machine deployment (e.g. development environemnt) on a MacOS. 
+Instructions below are for setting up a single machine deployment (e.g. development environment) on a MacOS. 
 Other OSes are conceptually similar. 
 
 Start unsecure MongoDB server on localhost:
