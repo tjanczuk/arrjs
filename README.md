@@ -5,7 +5,7 @@ You can expose several HTTP or WebSocket applications over a single TCP port usi
 utilization of servers, including shared hosting. 
 
 - Host N applications on M servers, each application in K(N) instances, 1 <= K(N) <= M.
-- Routing based on the Host HTTP request header.
+- Routing based on the ```Host``` HTTP request header.
 - HTTP and HTTPS.
 - WebSockets and secure WebSockets.
 - SNI support for SSL.
