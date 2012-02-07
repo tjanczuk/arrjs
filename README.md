@@ -52,7 +52,7 @@ to resolve domain names used by the sample applications to localhost by adding t
 ```
 
 Start the ARR.JS router to listen for unsecured traffic on port 80 and SSL traffic on port 443 
-(these ports cannot not be used by other processes on the box)
+(these ports cannot be used by other processes on the box)
 
 ```
 cd src
