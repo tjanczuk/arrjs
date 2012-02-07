@@ -17,7 +17,7 @@ utilization of servers, including shared hosting.
 
 ## Prerequisities
 
-- Windows, MacOS, *nix (tested on Windows 7 & 2008 Server, MacOS Lion, Ubuntu 11.10)
+- Windows, MacOS, or *nix (tested on Windows 7 & 2008 Server, MacOS Lion, Ubuntu 11.10)
 - [node.js v0.7.0 or greater](http://nodejs.org/dist/). MacOS and *nix may use earlier versions.
 - [MongoDB](http://www.mongodb.org/downloads). The database is used to store application metadata and must be 
 accessible from all backends. 
