@@ -131,35 +131,37 @@ Options:
   -k, --key      Private key for SSL                            [default: "certs/wildcard-janczuk-key.pem"]
 ```
 
-The [MongoDB connetion URL](http://www.mongodb.org/display/DOCS/Connections) (-m) must point to the central MongoDB 
+The [MongoDB connection URL](http://www.mongodb.org/display/DOCS/Connections) (-m) must point to the central MongoDB 
 database with the ```apps``` collection that holds the application metadata. 
 
-The managed TCP port range (-r) indicates the range of TCP ports arr.js will assign to managed applications when 
-they are activated. The TCP port number assigned to an instance of an application is passed to the application through
-the process environment variable named ```PORT```. For example, in case of node.js applications, this value is accessible 
+The managed TCP port range (-r) indicates the range of TCP ports arr.js will use to assign a TCP port to a
+managed application when it is activated. The TCP port number assigned to an instance of an application is passed to the 
+application through
+the process environment variable named ```PORT```. In case of node.js applications for example, this value is accessible 
 via the ```process.env.PORT``` property and can be used to set up an HTTP listener. 
 See [server.js](https://github.com/tjanczuk/arrjs/blob/master/src/apps/app1/server.js) for an example. 
 
 The unsecured (-p) and secured (-s) port number are the two TCP port numbers arr.js will listen on. Arr.js will 
-accept HTTP and WS traffic over the unsecured port, and HTTPS and WSS traffic over the secured port. SSL security terminates 
-at arr.js. Arr.js acts as an HTTP[S]/WS[S] reverse proxy, routing incoming requests to appropriate applications, 
-and activating them if necessary. Communication between arr.js and an instance of a application is not secured with SSL
-(i.e. HTTP or WS), so the application code should always set up their listeners for HTTP and WS, regardless whether client
-calls arrive over SSL or not. Appropriate set of proxy ```x-forwarded-*``` headers that arr.js adds to the requests 
-allow applications to learn more about the original client connection. 
+accept HTTP and WS traffic on the unsecured port, and HTTPS and WSS traffic on the secured port. SSL security terminates 
+at arr.js. Arr.js acts as an HTTP[S]/WS[S] reverse proxy, routing incoming requests to appropriate applications
+based on the value of the Host HTTP request header. If necessary, an instance of an application is activated. 
+Communication between arr.js and an instance of an application is not secured with SSL
+(i.e. plaintext HTTP or WS is used), so the application code should always set up their listeners for HTTP and WS, 
+regardless whether calls the client issues requests over SSL or not. Appropriate set of ```x-forwarded-*``` HTTP request
+headers that arr.js adds to the routed requests allow applications to learn more about the original client connection. 
 
 Each instance of arr.js is configured with an X.509 certificate (-c) and the associated private key (-k). This
 certificate and private key are used to identify the server during the SSL handshake, unless application specific
-configuration overrdies this setting by providing its own certificate and private key to be used  with 
+configuration specifies its own certificate and private key to be used  with 
 [Server Name Identification (SNI)](http://en.wikipedia.org/wiki/Server_Name_Indication). Note that for SNI to take effect
-the client must support it, but most modern browsers do. If you plan to support SSL for multiple applications with 
-different host names and use a single server side certificate to secure them, the domain suffix of all these applications
-must be the same (e.g. foo.barbaz.com and baz.barbaz.com), and the certificate must be a wildcard certificate (e.g. 
-CN=*.barbaz.com). 
+the client must support it (which most modern browsers do). If you plan to support SSL for multiple applications with 
+different host names and use a single server side certificate to secure them, the domain suffix of the host name
+of these applications must be the same (e.g. foo.barbaz.com and baz.barbaz.com), and the arr.js certificate must be a 
+wildcard certificate (e.g. CN=*.barbaz.com). 
 
 ### Network Load Balancer
 
-In a typical deployment servers in a farm would run behind a TCP level network load balancer. For the convenience of 
+In a typical deployment servers in a farm would run behind a TCP level load balancer. For the convenience of 
 development, this project includes a very simple, TCP level software load balancer, 
 [nlb.js](https://github.com/tjanczuk/arrjs/blob/master/src/nlb.js). 
 
