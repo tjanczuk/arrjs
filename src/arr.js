@@ -310,7 +310,7 @@ function setupRouter() {
 	});
 	secureServer.listen(argv.s);
 
-	console.log('ARRDWAS started');
+	console.log('ARR.JS started');
 	console.log('Ctrl-C to terminate');
 }
 

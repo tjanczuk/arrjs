@@ -55,7 +55,7 @@ Start the ARR.JS router to listen for unsecured traffic on port 80 and SSL traff
 
 ```
 cd src
-sudo node arrdwas.js --mongo=mongodb://localhost/arr -p 80 -s 443
+sudo node arr.js --mongo=mongodb://localhost/arr -p 80 -s 443
 ```
 
 Issue a few requests to test the system:
@@ -79,8 +79,7 @@ the application is not trusted (it is self-signed).
 The MongoDB dabatase holds application metadata and must be accessible from all servers in the farm. 
 You can use your own instance or get started with a free instance
 provided by [MongoHQ](https://mongohq.com/home). Bottom line is you need a MongoDB connection URL to provide to 
-all instances of arrdwas.js you will run
-on the backends.
+all instances of arr.js you will run on the backends.
 
 The application metadata must be stored in a single MongoDB collection called ```apps```. Each document in this collection 
 must have the following structure:
@@ -114,12 +113,12 @@ a file that can be imported into the MongoDB database using the
 
 ### Backends
 
-Each server in the farm dedicated to running applications must be running an instance of arrdwas.js. Typically each of 
-the instances of arrdwas.js would be configured identically, which allows any run of the mill TCP level load balancer
+Each server in the farm dedicated to running applications must be running an instance of arr.js. Typically each of 
+the instances of arr.js would be configured identically, which allows any run of the mill TCP level load balancer
 to be put in front of the server farm. Ardwas.js accepts the following parameters:
 
 ```
-Usage: node ./arrdwas.js
+Usage: node ./arr.js
 
 Options:
   -m, --mongo    Mongo DB connecton string                      [default: "mongodb://localhost/arr"]
@@ -133,21 +132,21 @@ Options:
 The [MongoDB connetion URL](http://www.mongodb.org/display/DOCS/Connections) (-m) must point to the central MongoDB 
 database with the ```apps``` collection that holds the application metadata. 
 
-The managed TCP port range (-r) indicates the range of TCP ports arrdwas.js will assign to managed applications when 
+The managed TCP port range (-r) indicates the range of TCP ports arr.js will assign to managed applications when 
 they are activated. The TCP port number assigned to an instance of an application is passed to the application through
 the process environment variable named ```PORT```. For example, in case of node.js applications, this value is accessible 
 via the ```process.env.PORT``` property and can be used to set up an HTTP listener. 
 See [server.js](https://github.com/tjanczuk/arrjs/blob/master/src/apps/app1/server.js) for an example. 
 
-The unsecured (-p) and secured (-s) port number are the two TCP port numbers arrdwas.js will listen on. Arrdwas.js will 
+The unsecured (-p) and secured (-s) port number are the two TCP port numbers arr.js will listen on. Arr.js will 
 accept HTTP and WS traffic over the unsecured port, and HTTPS and WSS traffic over the secured port. SSL security terminates 
-at arrdwas.js. Arrdwas.js acts as an HTTP[S]/WS[S] reverse proxy, routing incoming requests to appropriate applications, 
-and activating them if necessary. Communication between arrdwas.js and an instance of a application is not secured with SSL
+at arr.js. Arr.js acts as an HTTP[S]/WS[S] reverse proxy, routing incoming requests to appropriate applications, 
+and activating them if necessary. Communication between arr.js and an instance of a application is not secured with SSL
 (i.e. HTTP or WS), so the application code should always set up their listeners for HTTP and WS, regardless whether client
-calls arrive over SSL or not. Appropriate set of proxy ```x-forwarded-*``` headers that arrdwas.js adds to the requests 
+calls arrive over SSL or not. Appropriate set of proxy ```x-forwarded-*``` headers that arr.js adds to the requests 
 allow applications to learn more about the original client connection. 
 
-Each instance of arrdwas.js is configured with an X.509 certificate (-c) and the associated private key (-k). This
+Each instance of arr.js is configured with an X.509 certificate (-c) and the associated private key (-k). This
 certificate and private key are used to identify the server during the SSL handshake, unless application specific
 configuration overrdies this setting by providing its own certificate and private key to be used  with 
 [Server Name Identification (SNI)](http://en.wikipedia.org/wiki/Server_Name_Indication). Note that for SNI to take effect
@@ -168,7 +167,7 @@ Configuration of nlb.js is stored in the adjacent ```nlb.json``` file with the f
 [
   {                             // multiple "routing rules" are allowed; typically one for unsecure traffic and one for SSL
 		"port": 80,                 // the input TCP port number the load balancer will listen on
-		"backends": [               // array of arrdwas.js backend endpoints to load balance incoming TCP connections to
+		"backends": [               // array of arr.js backend endpoints to load balance incoming TCP connections to
 			{
 				"host": "localhost",    // destination host name
 				"port": 31415           // destination port number (does not need to match the input port number)
