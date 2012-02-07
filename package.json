@@ -1,8 +1,11 @@
 {
   "name": "arrjs",
-  "description": "HTTP and WebSocket application request routing and management",
+  "description": "HTTP and WebSocket application request routing",
   "version": "0.1.0",
-  "author": "Tomasz Janczuk <tomasz@janczuk.org>",
+  "author": {
+    "name": "Tomasz Janczuk <tomasz@janczuk.org>",
+    "url": "http://tomasz.janczuk.org"
+  },
   "dependencies": {
     "http-proxy": "0.8.0",
     "optimist": "0.3.1",
@@ -11,7 +14,14 @@
   },
   "devDependencies": {
   },
+  "homepage": "http://github.com/tjanczuk/arrjs",
+  "bugs": { 
+    "url": "http://github.com/tjanczuk/arrjs/issues"
+  },
   "keywords": ["routing", "http", "application", "web"],
-  "repository": "git://github.com/tjanczuk/arrjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tjanczuk/arrjs.git"
+  },
   "engines": { "node": ">= 0.7.0-pre" }
 }
