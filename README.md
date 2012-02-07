@@ -117,7 +117,7 @@ a file that can be imported into the MongoDB database using the
 
 Each server in the farm dedicated to running applications must be running an instance of arr.js. Typically each of 
 the instances of arr.js would be configured identically, which allows any run of the mill TCP level load balancer
-to be put in front of the server farm. Ardwas.js accepts the following parameters:
+to be put in front of the server farm. Arr.js accepts the following parameters:
 
 ```
 Usage: node ./arr.js
