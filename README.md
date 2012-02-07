@@ -27,6 +27,10 @@ accessible from all backends.
 Instructions below are for setting up a single machine deployment (e.g. development environment) on a MacOS. 
 Other OSes are conceptually similar. 
 
+Get ARR.JS:
+
+```npm install arrjs```
+
 Start unsecure MongoDB server on localhost:
 
 ```
@@ -36,7 +40,7 @@ mongod
 Import application metadata for the three sample applications:
 
 ```
-mongoimport -d arr -c apps src/apps.json
+mongoimport -d arr -c apps node_modules/arrjs/src/apps.json
 ```
 
 Configure your HOSTS file (/etc/hosts on MacOS and *nix, %systemroot%\system32\drivers\etc\hosts on Windows) 
@@ -55,7 +59,7 @@ Start the ARR.JS router to listen for unsecured traffic on port 80 and SSL traff
 (these ports cannot be used by other processes on the box):
 
 ```
-cd src
+cd node_modules/arrjs/src
 sudo node arr.js --mongo=mongodb://localhost/arr -p 80 -s 443
 ```
 
