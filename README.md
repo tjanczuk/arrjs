@@ -29,7 +29,9 @@ Other OSes are conceptually similar.
 
 Get ARR.JS:
 
-```npm install arrjs```
+```
+npm install arrjs
+```
 
 Start unsecure MongoDB server on localhost:
 
