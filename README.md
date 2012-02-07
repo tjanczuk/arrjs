@@ -8,11 +8,12 @@ utilization of servers, including shared hosting.
 - Routing based on the Host HTTP request header.
 - HTTP and HTTPS.
 - WebSockets and secure WebSockets.
+- SNI support for SSL.
 - Message-based process activation.
 - Process monitoring and crash recovery. 
 - Host applications built with arbitrary technology with its own HTTP stack, including node.js.
 - Works on Windows, MacOS, and *nix. 
-- Built with node.js and MongoDB. 
+- Built with node.js, MongoDB, and nodejitsu HTTP proxy. 
 
 ## Prerequisities
 
