@@ -2,7 +2,7 @@
 ===
 
 You can expose several HTTP or WebSocket applications over a single TCP port using ARR.JS. This is useful for better 
-utilization of servers, including shared hosting. 
+utilization of servers, including shared hosting ([read more...](http://tomasz.janczuk.org/2012/02/http-and-websocket-application-routing.html))
 
 - Host N applications on M servers, each application in K(N) instances, 1 <= K(N) <= M.
 - Routing based on the ```Host``` HTTP request header.
