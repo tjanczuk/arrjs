@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/tjanczuk/arrjs.png)](http://travis-ci.org/tjanczuk/arrjs)
 #HTTP and WebSocket application routing
 ===
 
